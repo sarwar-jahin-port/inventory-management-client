@@ -459,7 +459,7 @@ function App() {
                 <td className="border border-gray-300 px-4 py-2">
                   <div className="flex flex-col md:flex-row gap-2">
                     <img
-                      src={`http://localhost:5000/uploads/${product?.image?.replace("uploads\\", "")}` || ""}
+                      src={product.image}
                       alt={product.name}
                       className="w-10 h-10 rounded-full object-cover transition-transform duration-300 hover:scale-[5] hover:z-20"
                     />
