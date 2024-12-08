@@ -10,6 +10,7 @@ import EditStoreModal from "./components/EditStoreModal";
 import StockModal from "./components/StockModal";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import SalesReportTable from "./components/SalesReportTable";
+import EditProductModal from "./components/EditProductModal";
 
 function App() {
   const [stores, setStores] = useState([]);
@@ -120,6 +121,7 @@ function App() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [currentProductId, setCurrentProductId] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const [modalType, setModalType] = useState(null); // 'add' or 'subtract'
   const [quantityInput, setQuantityInput] = useState(""); // For quantity input
@@ -148,6 +150,53 @@ function App() {
       console.error("Error adding product:", error.message);
     }
   };
+
+  const updateProduct = async (updatedProduct, imageFile) => {
+    try {
+      const formData = new FormData();
+      
+      // Append other product details to FormData
+      formData.append("name", updatedProduct.name);
+      formData.append("quantity", updatedProduct.quantity);
+      formData.append("source", updatedProduct.source);
+      formData.append("folder", updatedProduct.folder);
+  
+      // If a new image is provided, append it to FormData
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+  
+      // Send PUT request with FormData
+      const response = await axios.put(
+        `${import.meta.env.VITE_BASE_URL}/products/${updatedProduct._id}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } } // Make sure to set the right content type for file uploads
+      );
+  
+      // Update local state with the updated product
+      setProducts((prev) =>
+        prev.map((product) =>
+          product._id === updatedProduct._id ? response.data : product
+        )
+      );
+  
+      setSelectedProduct(null); // Close the modal or reset selected product
+    } catch (error) {
+      console.error("Error updating product:", error.message);
+    }
+  };
+  
+
+  const deleteProduct = async (id) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_BASE_URL}/products/${id}`);
+      setProducts((prev) => prev.filter((product) => product._id !== id));
+      setSelectedProduct(null);
+    } catch (error) {
+      console.error("Error deleting product:", error.message);
+    }
+  };
+
 
   const confirmDelete = async (productId) => {
     try {
@@ -287,7 +336,7 @@ function App() {
         </div>
 
         <div className="flex flex-wrap gap-2 mb-6">
-          {stores.length>0 && stores?.map((store) => (
+          {stores.length > 0 && stores?.map((store) => (
             <button
               key={store._id}
               onClick={() => handleStoreClick(store._id)}
@@ -422,6 +471,17 @@ function App() {
             />
           )}
 
+          {selectedProduct && (
+            <EditProductModal
+              product={selectedProduct}
+              folders={folders}
+              onClose={() => setSelectedProduct(null)}
+              onUpdate={updateProduct}
+              onDelete={deleteProduct}
+            />
+          )}
+
+
           {/* Delete Confirmation Modal */}
           {isDeleteConfirmOpen && (
             <DeleteConfirmation
@@ -483,6 +543,12 @@ function App() {
                     >
                       -
                     </button>
+                    <button
+                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                      onClick={() => setSelectedProduct(product)}
+                    >
+                      Edit
+                    </button>
                   </div>
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
@@ -511,8 +577,8 @@ function App() {
         )}
       </div>}
       {showSales && <div className="w-full sm:w-10/12 mx-auto bg-white shadow-lg rounded-xl border border-gray-300 p-6 sm:p-8 md:p-10 my-6">
-        <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 mb-4" onClick={()=>setShowSales(false)}>Home</button>  
-        <SalesReportTable salesData={salesData}/>
+        <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 mb-4" onClick={() => setShowSales(false)}>Home</button>
+        <SalesReportTable salesData={salesData} />
       </div>}
     </div>
   );
